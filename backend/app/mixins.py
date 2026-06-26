@@ -14,8 +14,11 @@ class FamilyTreeCacheMixin:
 
     def get_cache_key(self, request, *args, **kwargs):
         identity_number = kwargs.get("identity_number")
-        max_gen = request.GET.get("max_generation", "10")
-        return f"{self.cache_prefix}_person_{identity_number}_gen_{max_gen}"
+        view_name = self.__class__.__name__.lower()
+        if view_name == 'personfamilytreelistview':
+            max_gen = request.GET.get("max_generation", "10")
+            return f"{self.cache_prefix}_person_{identity_number}_gen_{max_gen}"
+        return f"{self.cache_prefix}_person_{identity_number}"
 
     def serve_cached_payload(self, request, *args, **kwargs):
         """
@@ -24,7 +27,7 @@ class FamilyTreeCacheMixin:
         return Response(
             self._cached_payload_data, 
             status=status.HTTP_200_OK, 
-            headers={"X-DRF-Cache": "HIT"}
+            headers={"X-Gdaddy-Api-Cache": "HIT"}
         )
     
     def initial(self, request, *args, **kwargs):
