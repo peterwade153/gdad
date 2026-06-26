@@ -7,9 +7,9 @@ from django.core.management.base import BaseCommand
 
 from app.models import Person
 
-
 # Initialize the default English generator
 fake = Faker()
+
 
 class Command(BaseCommand):
     help = "Seed 15-generation lineage dataset"
@@ -47,11 +47,11 @@ class Command(BaseCommand):
             current_gen_mothers = []
 
             # Adding two people per generation, avoid explosions
-            for i in ['father', 'mother']:
+            for i in ["father", "mother"]:
                 father = random.choice(prev_gen_fathers)
                 mother = random.choice(prev_gen_mothers)
 
-                is_father = (i == "father")
+                is_father = i == "father"
                 name_suffix = "Father" if is_father else "Mother"
 
                 person = Person.objects.create(
@@ -70,5 +70,5 @@ class Command(BaseCommand):
                     current_gen_mothers.append(person)
             # Append the current generation's split pools
             generations.append((current_gen_fathers, current_gen_mothers))
-        
+
         self.stdout.write(self.style.SUCCESS("Family tree seeding complete."))
