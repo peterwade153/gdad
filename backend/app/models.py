@@ -30,5 +30,6 @@ class Person(models.Model):
         db_index=True,
         db_column="IdentityNumber",
     )
+
     class Meta:
         db_table = "site_person"

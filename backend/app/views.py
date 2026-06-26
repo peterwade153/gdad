@@ -9,13 +9,19 @@ from .mixins import FamilyTreeCacheMixin
 class PersonFamilyTreeListView(FamilyTreeCacheMixin, APIView):
 
     def get(self, request, identity_number, *args, **kwargs):
-        max_gen = int(request.query_params.get('max_generation', 10))
+        max_gen = int(request.query_params.get("max_generation", 10))
 
-        person = Person.objects.filter(identity_number=identity_number).values("identity_number").first()
+        person = (
+            Person.objects.filter(identity_number=identity_number)
+            .values("identity_number")
+            .first()
+        )
         if not person:
-            return Response({"error": "Person not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Person not found."}, status=status.HTTP_404_NOT_FOUND
+            )
 
-        person_identity_number = person['identity_number']
+        person_identity_number = person["identity_number"]
 
         query = """
             WITH RECURSIVE lineage AS (
@@ -37,29 +43,35 @@ class PersonFamilyTreeListView(FamilyTreeCacheMixin, APIView):
             ORDER BY generation ASC;
         """
         raw_results = Person.objects.raw(query, [person_identity_number, max_gen])
-        result = [{
-            "id": p.id,
-            "name": p.name,
-            "surname": p.surname,
-            "identity_number": p.identity_number,
-            "birth_date": p.birth_date.isoformat() if p.birth_date else None,
-            "father_id": p.father_id,  
-            "mother_id": p.mother_id,
-            "generation": p.generation,
-        } for p in raw_results]
-        return Response(
-            result,
-            status=status.HTTP_200_OK
-        )
+        result = [
+            {
+                "id": p.id,
+                "name": p.name,
+                "surname": p.surname,
+                "identity_number": p.identity_number,
+                "birth_date": p.birth_date.isoformat() if p.birth_date else None,
+                "father_id": p.father_id,
+                "mother_id": p.mother_id,
+                "generation": p.generation,
+            }
+            for p in raw_results
+        ]
+        return Response(result, status=status.HTTP_200_OK)
 
 
 class PersonRootAscendantView(FamilyTreeCacheMixin, APIView):
     def get(self, request, identity_number, *args, **kwargs):
-        person = Person.objects.filter(identity_number=identity_number).values("identity_number").first()
+        person = (
+            Person.objects.filter(identity_number=identity_number)
+            .values("identity_number")
+            .first()
+        )
         if not person:
-            return Response({"error": "Person not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Person not found."}, status=status.HTTP_404_NOT_FOUND
+            )
 
-        person_identity_number = person['identity_number']
+        person_identity_number = person["identity_number"]
 
         # Upstream tracking parents/ancestors where parent ID matches previous row's FatherId or MotherId
         query = """
@@ -86,18 +98,21 @@ class PersonRootAscendantView(FamilyTreeCacheMixin, APIView):
         """
         raw_results = Person.objects.raw(query, [person_identity_number])
 
-        roots = [{
-            "id": p.id,
-            "name": p.name,
-            "surname": p.surname,
-            "identity_number": p.identity_number,
-            "birth_date": p.birth_date.isoformat() if p.birth_date else None,
-            "generations": p.generation
-        } for p in raw_results]
+        roots = [
+            {
+                "id": p.id,
+                "name": p.name,
+                "surname": p.surname,
+                "identity_number": p.identity_number,
+                "birth_date": p.birth_date.isoformat() if p.birth_date else None,
+                "generations": p.generation,
+            }
+            for p in raw_results
+        ]
         return Response(
             {
                 "max_depth_reached": roots[0]["generations"] if roots else 0,
-                "root_ascendants": roots
+                "root_ascendants": roots,
             },
             status=status.HTTP_200_OK,
         )
