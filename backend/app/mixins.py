@@ -27,7 +27,7 @@ class FamilyTreeCacheMixin:
         return Response(
             self._cached_payload_data, 
             status=status.HTTP_200_OK, 
-            headers={"X-DRF-Cache": "HIT"}
+            headers={"X-Gdaddy-Api-Cache": "HIT"}
         )
     
     def initial(self, request, *args, **kwargs):
