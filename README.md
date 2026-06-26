@@ -10,3 +10,11 @@ To start the app
 
 ```docker compose up```
 
+To seed the family tree data
+
+```docker compose exec backend python manage.py seed```
+
+## Tests
+To run tests
+
+```docker compose exec backend python manage.py test```
