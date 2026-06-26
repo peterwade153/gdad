@@ -52,7 +52,6 @@ class PersonFamilyTreeListView(FamilyTreeCacheMixin, APIView):
                     "generation": person.generation,
                 }
             )
-
         return Response(
             result,
             status=status.HTTP_200_OK

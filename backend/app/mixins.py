@@ -38,11 +38,9 @@ class FamilyTreeCacheMixin:
         
         if cached_data is not None:
             # --- CACHE HIT ---
-            # Save the data to the instance and route 'get' to our clean delivery method
             self._cached_payload_data = cached_data
             self.get = self.serve_cached_payload
         else:
-            # --- CACHE MISS ---
             self._cached_payload_data = None
     
     def finalize_response(self, request, response, *args, **kwargs):
