@@ -37,22 +37,67 @@ class PersonFamilyTreeListView(FamilyTreeCacheMixin, APIView):
             ORDER BY generation ASC;
         """
         raw_results = Person.objects.raw(query, [person_identity_number, max_gen])
-
-        result = []
-        for person in raw_results:
-            result.append(
-                {
-                    "id": person.id,
-                    "name": person.name,
-                    "surname": person.surname,
-                    "identity_number": person.identity_number,
-                    "birth_date": person.birth_date.isoformat() if person.birth_date else None,
-                    "father_id": person.father_id,  
-                    "mother_id": person.mother_id,
-                    "generation": person.generation,
-                }
-            )
+        result = [{
+            "id": p.id,
+            "name": p.name,
+            "surname": p.surname,
+            "identity_number": p.identity_number,
+            "birth_date": p.birth_date.isoformat() if p.birth_date else None,
+            "father_id": p.father_id,  
+            "mother_id": p.mother_id,
+            "generation": p.generation,
+        } for p in raw_results]
         return Response(
             result,
             status=status.HTTP_200_OK
+        )
+
+
+class PersonRootAscendantView(FamilyTreeCacheMixin, APIView):
+    def get(self, request, identity_number, *args, **kwargs):
+        person = Person.objects.filter(identity_number=identity_number).values("identity_number").first()
+        if not person:
+            return Response({"error": "Person not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        person_identity_number = person['identity_number']
+
+        # Upstream tracking parents/ancestors where parent ID matches previous row's FatherId or MotherId
+        query = """
+            WITH RECURSIVE upstream_lineage AS (
+                -- Start with the target individual
+                SELECT "Id", "Name", "Surname", "IdentityNumber", "BirthDate", "FatherId", "MotherId", 1 AS generation
+                FROM site_person 
+                WHERE "IdentityNumber" = %s
+                
+                UNION ALL
+
+                -- Move upwards to ancestors
+                SELECT p."Id", p."Name", p."Surname", p."IdentityNumber", p."BirthDate", p."FatherId", p."MotherId", ul.generation + 1
+                FROM site_person p
+                INNER JOIN upstream_lineage ul ON p."IdentityNumber" = ul."FatherId" OR p."IdentityNumber" = ul."MotherId"
+            ),
+            max_generation AS (
+                SELECT MAX(generation) AS max_gen FROM upstream_lineage
+            )
+            SELECT DISTINCT ul.*
+            FROM upstream_lineage ul
+            CROSS JOIN max_generation mg
+            WHERE ul.generation = mg.max_gen;
+        """
+        raw_results = Person.objects.raw(query, [person_identity_number])
+
+        roots = [{
+            "id": p.id,
+            "name": p.name,
+            "surname": p.surname,
+            "identity_number": p.identity_number,
+            "birth_date": p.birth_date.isoformat() if p.birth_date else None,
+            "generations": p.generation
+        } for p in raw_results]
+        return Response(
+            {
+                "max_depth_reached": roots[0]["generations"] if roots else 0,
+                "root_ascendants": roots
+            },
+            status=status.HTTP_200_OK,
         )
