@@ -10,6 +10,7 @@ class Person(models.Model):
         blank=True,
         related_name="father_children",
         db_column="FatherId",
+        to_field="identity_number",
     )
     mother = models.ForeignKey(
         "self",
@@ -18,6 +19,7 @@ class Person(models.Model):
         blank=True,
         related_name="mother_children",
         db_column="MotherId",
+        to_field="identity_number",
     )
     name = models.CharField(max_length=100, db_column="Name")
     surname = models.CharField(max_length=100, db_column="Surname")
