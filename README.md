@@ -18,3 +18,8 @@ To seed the family tree data
 To run tests
 
 ```docker compose exec backend python manage.py test```
+
+## Access App
+```http://localhost:5173/```
+
+

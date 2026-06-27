@@ -28,6 +28,7 @@ export const getLayoutedElements = (
             label: `${person.name} ${person.surname}`,
             birthDate: person.birth_date,
             generation: person.generation,
+            identityNumber: person.identity_number,
         },
         position: { x: 0, y: 0 },
     });
