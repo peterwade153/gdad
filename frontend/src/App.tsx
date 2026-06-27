@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './App.css'
 import { FamilyTreePage } from './components/FamilyTreePage';
-import { RootAscendantPage } from './components/RootAscendant';
+import { RootAscendantPage } from './components/RootAscendantPage';
 import { Header } from './components/Header';
 
 function App() {

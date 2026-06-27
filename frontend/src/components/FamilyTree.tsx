@@ -27,7 +27,6 @@ export const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({ apiData }) => 
     const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
-    // Sync state whenever apiData updates
     useEffect(() => {
         if (!apiData || apiData.length === 0) return;
         

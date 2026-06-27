@@ -1,0 +1,12 @@
+Name: Peter Walugembe
+
+Time Log
+
+Tasks    
+1. Requirements review - 1 hour
+2. Set Up (Repository set-up, Docker) - 30 minutes
+3. Backend APIs (Project creation, APIs and Tests) - 2 hours
+4. Tree visualizations(reviewing libs to use, React Flow )  -  1 hours
+5. Frontend Set up and Project creation, configuration set ups for Docker and backend intergration - 45 minutes
+6. Interface creation, along with fetching backend data - 3 hours
+7. Frontend Validation - 45 minutes

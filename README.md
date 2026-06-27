@@ -11,7 +11,8 @@ To start the app
 
 ```docker compose up```
 
-To seed the family tree data
+## Seed family tree test data
+Open up a terminal and run the command below
 
 ```docker compose exec backend python manage.py seed```
 
