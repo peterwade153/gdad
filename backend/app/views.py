@@ -6,73 +6,84 @@ from .models import Person
 from .mixins import FamilyTreeCacheMixin
 
 
-class PersonFamilyTreeListView(FamilyTreeCacheMixin, APIView):
+class PersonFamilyTreeListView(APIView):
 
-    def get(self, request, identity_number, *args, **kwargs):
-        max_gen = int(request.query_params.get("max_generation", 10))
+    def get(self, request, *args, **kwargs):
+        max_gen = int(request.query_params.get("max-generation", 10))
+        identity_number = request.query_params.get("identity-number")
 
-        person = (
-            Person.objects.filter(identity_number=identity_number)
-            .values("identity_number")
-            .first()
-        )
-        if not person:
-            return Response(
-                {"error": "Person not found."}, status=status.HTTP_404_NOT_FOUND
-            )
+        if identity_number:
+            start_condition = 'WHERE "IdentityNumber" = %s'
+            params = [identity_number, max_gen]
+        else:
+            # Root people, with no parents defined
+            start_condition = 'WHERE "FatherId" IS NULL AND "MotherId" IS NULL'
+            params = [max_gen]
 
-        person_identity_number = person["identity_number"]
-
-        query = """
+        query = f"""
             WITH RECURSIVE lineage AS (
                 -- Start with the target individual
-                SELECT "Id", "Name", "Surname", "IdentityNumber", "BirthDate", "FatherId", "MotherId", 1 AS generation
-                FROM site_person 
-                WHERE "IdentityNumber" = %s
+                SELECT 
+                    p."Id", p."Name", p."Surname", p."IdentityNumber", p."BirthDate", p."FatherId", p."MotherId", 1 AS generation
+                FROM site_person p
+                {start_condition}
                 
                 UNION ALL
                 
                 -- Recursive step: Step up through ancestral lines
-                SELECT p."Id", p."Name", p."Surname", p."IdentityNumber", p."BirthDate", p."FatherId", p."MotherId", l.generation + 1
+                SELECT 
+                    p."Id",
+                    p."Name",
+                    p."Surname",
+                    p."IdentityNumber",
+                    p."BirthDate",
+                    p."FatherId",
+                    p."MotherId",
+                    l.generation + 1
                 FROM site_person p 
-                INNER JOIN lineage l ON p."IdentityNumber" = l."FatherId" OR p."IdentityNumber" = l."MotherId"
+                INNER JOIN lineage l ON l."IdentityNumber" IN (p."FatherId", p."MotherId")
                 WHERE l.generation < %s
-            ) 
-            SELECT DISTINCT "Id", "Name", "Surname", "IdentityNumber", "BirthDate", "FatherId", "MotherId", generation 
-            FROM lineage
-            ORDER BY generation ASC;
+            )
+            SELECT DISTINCT ON (l."IdentityNumber") 
+                l."Id",
+                l."Name", 
+                l."Surname",
+                l."IdentityNumber",
+                l."BirthDate",
+                l."FatherId",
+                l."MotherId",
+                l.generation AS generation
+            FROM lineage l
+            ORDER BY l."IdentityNumber", generation ASC;
         """
-        raw_results = Person.objects.raw(query, [person_identity_number, max_gen])
-        result = [
+        raw_results = Person.objects.raw(query, params)
+        result = []
+        gen_count = 0
+        for p in raw_results:
+            gen_count = max(p.generation, gen_count)
+            result.append(
+                {
+                    "id": p.id,
+                    "name": p.name,
+                    "surname": p.surname,
+                    "identity_number": p.identity_number,
+                    "birth_date": p.birth_date.isoformat() if p.birth_date else None,
+                    "father_id": p.father_id,
+                    "mother_id": p.mother_id,
+                    "generation": p.generation,
+                }
+            )
+        return Response(
             {
-                "id": p.id,
-                "name": p.name,
-                "surname": p.surname,
-                "identity_number": p.identity_number,
-                "birth_date": p.birth_date.isoformat() if p.birth_date else None,
-                "father_id": p.father_id,
-                "mother_id": p.mother_id,
-                "generation": p.generation,
-            }
-            for p in raw_results
-        ]
-        return Response(result, status=status.HTTP_200_OK)
+                "people": result,
+                "generations": gen_count,
+            }, 
+            status=status.HTTP_200_OK
+        )
 
 
 class PersonRootAscendantView(FamilyTreeCacheMixin, APIView):
     def get(self, request, identity_number, *args, **kwargs):
-        person = (
-            Person.objects.filter(identity_number=identity_number)
-            .values("identity_number")
-            .first()
-        )
-        if not person:
-            return Response(
-                {"error": "Person not found."}, status=status.HTTP_404_NOT_FOUND
-            )
-
-        person_identity_number = person["identity_number"]
-
         # Upstream tracking parents/ancestors where parent ID matches previous row's FatherId or MotherId
         query = """
             WITH RECURSIVE upstream_lineage AS (
@@ -96,7 +107,7 @@ class PersonRootAscendantView(FamilyTreeCacheMixin, APIView):
             CROSS JOIN max_generation mg
             WHERE ul.generation = mg.max_gen;
         """
-        raw_results = Person.objects.raw(query, [person_identity_number])
+        raw_results = Person.objects.raw(query, [identity_number])
 
         roots = [
             {

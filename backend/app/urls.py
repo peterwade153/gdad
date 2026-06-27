@@ -4,7 +4,7 @@ from . import views
 
 urlpatterns = [
     path(
-        "family-tree/<str:identity_number>/lineage/",
+        "family-tree/lineage/",
         views.PersonFamilyTreeListView.as_view(),
         name="api-family-tree",
     ),

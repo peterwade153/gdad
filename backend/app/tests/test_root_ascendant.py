@@ -54,8 +54,8 @@ class PersonRootAscendantTestCase(APITestCase):
         )
         response = self.client.get(url)
 
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertIn("error", response.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['root_ascendants'], [])
 
     def test_get_root_ascendant_success(self):
         """Test fetching a root ascendant"""
