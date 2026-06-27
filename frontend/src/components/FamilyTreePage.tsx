@@ -4,8 +4,9 @@ import { FamilyTreeGraph } from './FamilyTree';
 import { FamilyTreeError } from './NetworkError';
 import { FamilyTreeForm } from './forms/FamilyTreeSearchForm';
 import { FamilyTreeLoading } from './Loading';
+import { TreePlaceholder } from './Placeholder';
 
-const API_URL = import.meta.env.VITE_API_BASE_URL;
+const API_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
 const getInitialIdentityNumber = (): string | undefined => {
     if (typeof window === 'undefined') return undefined;
@@ -32,9 +33,8 @@ export const FamilyTreePage: React.FC = () => {
                 if (identityNumber) {
                     queryParams.append('identity-number', identityNumber);
                 }
-                const url = `${API_URL}/family-tree/lineage/?${queryParams.toString()}`;
 
-                const response = await fetch(url);
+                const response = await fetch(`${API_URL}/family-tree/lineage/?${queryParams.toString()}`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch family tree data.');
                 }
@@ -72,13 +72,26 @@ export const FamilyTreePage: React.FC = () => {
                     <div className="w-full h-full rounded-xl border border-slate-200 overflow-hidden relative bg-slate-50">
                         <FamilyTreeGraph apiData={data.people} />
                     </div>
-                ) : null}
+                ) : (
+                    <TreePlaceholder 
+                        icon="🔍"
+                        iconBgColor="bg-amber-50"
+                        iconTextColor="text-amber-600"
+                        title="No Family Tree Found"
+                        description={
+                            <p>
+                                We couldn't find any root ascendant record/s associated with Identity Number
+                                <span className="font-semibold text-slate-800">"{identityNumber}"</span>.
+                                Please verify the number and try again.
+                            </p>
+                        }
+                    />
+                )}
                 {/* Pagination */}
                 <div className="absolute bottom-15 w-full border-t border-slate-200 p-3 justify-center items-center flex z-20 pointer-events-none">
                     {(() => {
                         const hasGenerationsCount = typeof data?.generations === 'number';
                         const hasReachedEnd = hasGenerationsCount && data?.generations < maxGeneration;
-                        
                         return (
                             <button
                                 type="button"

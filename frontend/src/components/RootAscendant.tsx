@@ -4,12 +4,12 @@ import { FamilyTreeGraph } from './FamilyTree';
 import { FamilyTreeError } from './NetworkError';
 import { FamilyTreeForm } from './forms/FamilyTreeSearchForm';
 import { FamilyTreeLoading } from './Loading';
-import { TreePlaceholder } from './Placeholder'
+import { TreePlaceholder } from './Placeholder';
 
-const API_URL = import.meta.env.VITE_API_BASE_URL;
+const API_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
 export const RootAscendantPage: React.FC = () => {
-    const [identityNumber, setIdentityNumber] = useState<string | undefined>(undefined);
+    const [identityNumber, setIdentityNumber] = useState("");
     // Network & Data States
     const [data, setData] = useState<RootAscendantPayload | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
@@ -21,11 +21,11 @@ export const RootAscendantPage: React.FC = () => {
             return;
         }
         const fetchFamilyTree = async () => {
+            setData(null);
             setLoading(true);
             setError(null);
             try {
-                const url = `${API_URL}/root-ascendant/${identityNumber}/`;
-                const response = await fetch(url);
+                const response = await fetch(`${API_URL}/root-ascendant/${identityNumber}/`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch family tree data.');
                 }
@@ -37,12 +37,11 @@ export const RootAscendantPage: React.FC = () => {
                 setLoading(false);
             }
         };
-    
         fetchFamilyTree();
     }, [identityNumber]);
 
     const handleFormSubmit = (value: string) => {
-        setIdentityNumber(value);
+        setIdentityNumber(value.trim());
     };
 
     return (
@@ -59,7 +58,7 @@ export const RootAscendantPage: React.FC = () => {
                     <FamilyTreeLoading />
                 ) : error ? (
                     <FamilyTreeError message={error} onRetry={()=> {setLoading(true);}} />
-                ) : data && data.root_ascendants && data.root_ascendants.length > 0 ? (
+                ) : data?.root_ascendants?.length ? (
                     <div className="w-full h-full rounded-xl border border-slate-200 overflow-hidden relative bg-slate-50">
                         <FamilyTreeGraph apiData={data.root_ascendants} />
                     </div>
