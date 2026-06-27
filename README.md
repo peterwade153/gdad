@@ -2,6 +2,7 @@
 who is my granddaddy, a family tree search website
 
 The Backend REST API is built with Python, Django, Django rest framework, and Uses PostgreSQL database.
+The Frontend React, TailwindCSS, Typescript
 
 ## Local Set Up
 The App has been set up with Docker and requires a local Docker installation.
