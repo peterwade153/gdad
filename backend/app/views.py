@@ -6,7 +6,7 @@ from .models import Person
 from .mixins import FamilyTreeCacheMixin
 
 
-class PersonFamilyTreeListView(APIView):
+class PersonFamilyTreeListView(FamilyTreeCacheMixin, APIView):
 
     def get(self, request, *args, **kwargs):
         max_gen = int(request.query_params.get("max-generation", 10))

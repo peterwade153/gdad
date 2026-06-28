@@ -23,5 +23,3 @@ To run tests
 
 ## Access App
 ```http://localhost:5173/```
-
-

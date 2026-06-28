@@ -16,8 +16,11 @@ class FamilyTreeCacheMixin:
         identity_number = kwargs.get("identity_number")
         view_name = self.__class__.__name__.lower()
         if view_name == "personfamilytreelistview":
-            max_gen = request.GET.get("max_generation", "10")
-            return f"{self.cache_prefix}_person_{identity_number}_gen_{max_gen}"
+            max_gen = request.GET.get("max-generation", "10")
+            identity_number = request.GET.get("identity-number")
+            if identity_number:
+                return f"{self.cache_prefix}_person_{identity_number}_gen_{max_gen}"
+            return f"{self.cache_prefix}_person_gen_{max_gen}"
         return f"{self.cache_prefix}_person_{identity_number}"
 
     def serve_cached_payload(self, request, *args, **kwargs):
