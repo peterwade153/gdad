@@ -68,7 +68,7 @@ export const FamilyTreePage: React.FC = () => {
                     <FamilyTreeLoading />
                 ) : error ? (
                     <FamilyTreeError message={error} onRetry={()=> {setLoading(true);}} />
-                ) : data ? (
+                ) : data?.people?.length ? (
                     <div className="w-full h-full rounded-xl border border-slate-200 overflow-hidden relative bg-slate-50">
                         <FamilyTreeGraph apiData={data.people} />
                     </div>
