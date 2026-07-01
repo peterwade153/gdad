@@ -4,6 +4,7 @@ from rest_framework import status
 
 from .models import Person
 from .mixins import FamilyTreeCacheMixin
+from .serializers import FamilyTreeSerializer, RootAscendantSerializer
 
 
 class PersonFamilyTreeListView(FamilyTreeCacheMixin, APIView):
@@ -57,25 +58,11 @@ class PersonFamilyTreeListView(FamilyTreeCacheMixin, APIView):
             ORDER BY l."IdentityNumber", generation ASC;
         """
         raw_results = Person.objects.raw(query, params)
-        result = []
-        gen_count = 0
-        for p in raw_results:
-            gen_count = max(p.generation, gen_count)
-            result.append(
-                {
-                    "id": p.id,
-                    "name": p.name,
-                    "surname": p.surname,
-                    "identity_number": p.identity_number,
-                    "birth_date": p.birth_date.isoformat() if p.birth_date else None,
-                    "father_id": p.father_id,
-                    "mother_id": p.mother_id,
-                    "generation": p.generation,
-                }
-            )
+        gen_count = max((p.generation for p in raw_results), default=0)
+        serializer = FamilyTreeSerializer(raw_results, many=True)
         return Response(
             {
-                "people": result,
+                "people": serializer.data,
                 "generations": gen_count,
             }, 
             status=status.HTTP_200_OK
@@ -109,21 +96,12 @@ class PersonRootAscendantView(FamilyTreeCacheMixin, APIView):
         """
         raw_results = Person.objects.raw(query, [identity_number])
 
-        roots = [
-            {
-                "id": p.id,
-                "name": p.name,
-                "surname": p.surname,
-                "identity_number": p.identity_number,
-                "birth_date": p.birth_date.isoformat() if p.birth_date else None,
-                "generations": p.generation,
-            }
-            for p in raw_results
-        ]
+        max_depth = raw_results[0].generation if raw_results else 0
+        serializer = RootAscendantSerializer(raw_results, many=True)
         return Response(
             {
-                "max_depth_reached": roots[0]["generations"] if roots else 0,
-                "root_ascendants": roots,
+                "max_depth_reached": max_depth,
+                "root_ascendants": serializer.data,
             },
             status=status.HTTP_200_OK,
         )
